@@ -2,16 +2,17 @@
 #include "util.h"
 #include <stdio.h>
 
-//typedef struct node_t {
+//struct _node_t {
 //	int val;
-//	void (*callback_print)(node_t *self);
-//	node_t *next;
+//	void (*callback_print)(struct _node_t *self);
+//	struct _node_t *next;
 //};
+//typedef struct _node_t node_t;
 
-//typedef struct llist_t {
+//typedef struct {
 //	node_t *start;
 //	pthread_mutex_t mutex;
-//};
+//} llist_t;
 
 void init_node(node_t *node, int val) {
 	node->val = val;
@@ -37,9 +38,11 @@ void add_node(llist_t *list, int val) {
 	{
 		int err = pthread_mutex_lock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
+
+	printf("adding node %d\n", val);
 	node_t **pcur = &list->start;
 	node_t *cur = list->start;
 	while (cur) {
@@ -47,7 +50,7 @@ void add_node(llist_t *list, int val) {
 			{
 				int err = pthread_mutex_unlock(&list->mutex);
 				if (err) {
-					TREAT_ERR(err);
+					handle_error_en(err);
 				}
 			}
 			return;
@@ -57,10 +60,11 @@ void add_node(llist_t *list, int val) {
 	}
 	*pcur = (node_t*) malloc(sizeof(node_t));
 	init_node(*pcur, val);
+
 	{
 		int err = pthread_mutex_unlock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
 }
@@ -69,9 +73,11 @@ void delete_node(llist_t *list, int val) {
 	{
 		int err = pthread_mutex_lock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
+
+	printf("deleting node %d\n", val);
 	node_t **pcur = &list->start;
 	node_t *cur = list->start;
 	while (cur) {
@@ -81,7 +87,7 @@ void delete_node(llist_t *list, int val) {
 			{
 				int err = pthread_mutex_unlock(&list->mutex);
 				if (err) {
-					TREAT_ERR(err);
+					handle_error_en(err);
 				}
 			}
 			return;
@@ -89,10 +95,11 @@ void delete_node(llist_t *list, int val) {
 		pcur = &cur->next;
 		cur = cur->next;
 	}
+
 	{
 		int err = pthread_mutex_unlock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
 }
@@ -101,19 +108,22 @@ void print_list(llist_t *list) {
 	{
 		int err = pthread_mutex_lock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
+
+	printf("printing the list\n");
 	node_t *cur = list->start;
 	while (cur) {
 		cur->callback_print(cur);
 		cur = cur->next;
 	}
 	printf("\n");
+
 	{
 		int err = pthread_mutex_unlock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
 }
@@ -122,9 +132,11 @@ void sort_list(llist_t *list) {
 	{
 		int err = pthread_mutex_lock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
+
+	printf("sorting the list\n");
 	if (!list->start) {
 		return;
 	}
@@ -154,10 +166,11 @@ void sort_list(llist_t *list) {
 		pcur1 = &cur1->next;
 		cur1 = cur1->next;
 	}
+
 	{
 		int err = pthread_mutex_unlock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
 }
@@ -166,9 +179,11 @@ void flush_list(llist_t *list) {
 	{
 		int err = pthread_mutex_lock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
+
+	printf("flushing the list\n");
 	node_t *cur = list->start;
 	node_t *next;
 	while (cur) {
@@ -177,10 +192,11 @@ void flush_list(llist_t *list) {
 		cur = next;
 	}
 	list->start = NULL;
+
 	{
 		int err = pthread_mutex_unlock(&list->mutex);
 		if (err) {
-			TREAT_ERR(err);
+			handle_error_en(err);
 		}
 	}
 }

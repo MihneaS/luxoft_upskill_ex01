@@ -1,12 +1,11 @@
 #include <stdio.h>
-#include <unistd.h> // for sleep
 #include "llist.h"
 
-void *test(void *args) {
+void *test() {
 	llist_t list;
 	init_list(&list);
 
-	printf("Single thread simple test.\n Output:\n");
+	printf("Single thread simple test.\nOutput:\n");
 
 	print_list(&list);
 
@@ -46,16 +45,48 @@ void *test(void *args) {
 	delete_node(&list, 3);
 	print_list(&list);
 
-	printf("Expected output:\n");
-	printf("\n");
-	printf("5;\n");
-	printf("5;4;3;\n");
-	printf("3;4;5;\n");
-	printf("3;\n");
-	printf("3;5;4;\n");
-	printf("\n");
-	printf("2;4;3;\n");
-	printf("\n");
+	printf(
+			"\n\n"
+			"Expected ouput\n"
+			"printing the list\n"
+			"\n"
+			"adding node 5\n"
+			"printing the list\n"
+			"  5;\n"
+			"adding node 5\n"
+			"adding node 4\n"
+			"adding node 3\n"
+			"adding node 5\n"
+			"printing the list\n"
+			"  5;  4;  3;\n"
+			"sorting the list\n"
+			"printing the list\n"
+			"  3;  4;  5;\n"
+			"deleting node 10\n"
+			"deleting node 5\n"
+			"deleting node 5\n"
+			"deleting node 4\n"
+			"printing the list\n"
+			"  3;\n"
+			"adding node 5\n"
+			"adding node 4\n"
+			"adding node 3\n"
+			"printing the list\n"
+			"  3;  5;  4;\n"
+			"flushing the list\n"
+			"printing the list\n"
+			"\n"
+			"adding node 2\n"
+			"adding node 3\n"
+			"adding node 4\n"
+			"printing the list\n"
+			"  2;  3;  4;\n"
+			"deleting node 2\n"
+			"deleting node 4\n"
+			"deleting node 3\n"
+			"printing the list\n"
+			"\n"
+			);
 
 	destroy_list(&list);
 

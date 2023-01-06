@@ -1,14 +1,17 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -g
+
 build: llist main
-	gcc -g main.o llist.o  -lpthread -o main
+	$(CC) $(CFLAGS) main.o llist.o  -lpthread -o main
 
 build_test01: llist test01
-	gcc -g test01.o llist.o -lpthread -o test01
+	$(CC) $(CFLAGS) test01.o llist.o -lpthread -o test01
 
 llist: llist.h llist.c util.h
-	gcc -c -g llist.c -lpthread
+	$(CC) $(CFLAGS) -c llist.c -lpthread
 
 main: main.c llist.h
-	gcc -c -g main.c -lpthread
+	$(CC) $(CFLAGS) -c main.c -lpthread
 
 test01: test01.c llist
-	gcc -c -g test01.c
+	$(CC) $(CFLAGS) -c test01.c

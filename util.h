@@ -1,4 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define TREAT_ERR(err) {fprintf(stderr, "%s:%d error:%d\n", __FILE__, __LINE__, err); exit(1);}
+#define handle_error_en(en) \
+	do {fprintf(stderr, "%s:%d error:%s\n", __FILE__, __LINE__, strerror(en)); exit(1);} while(0)
