@@ -1,3 +1,6 @@
+#ifndef LLIST_H
+#define LLIST_H
+
 #include <pthread.h>
 
 struct _node_t {
@@ -22,3 +25,5 @@ void delete_node(llist_t *list, int val);
 void print_list(llist_t *list);
 void sort_list(llist_t *list);
 void flush_list(llist_t *list);
+
+#endif //LLIST_H
