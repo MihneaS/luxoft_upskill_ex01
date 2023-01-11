@@ -7,7 +7,7 @@ build: llist main
 build_test01: llist test01
 	$(CC) $(CFLAGS) test01.o llist.o -lpthread -o test01
 
-llist: llist.h llist.c util.h
+llist: llist.h llist.c utils.h
 	$(CC) $(CFLAGS) -c llist.c -lpthread
 
 main: main.c llist.h

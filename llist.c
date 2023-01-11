@@ -1,10 +1,11 @@
 #include "llist.h"
 #include "utils.h"
 #include <stdio.h>
+#include <errno.h>
 
 //struct _node_t {
 //	int val;
-//	void (*callback_print)(struct _node_t *self);
+//	int (*callback_print)(struct _node_t *self);
 //	struct _node_t *next;
 //};
 //typedef struct _node_t node_t;
@@ -14,70 +15,142 @@
 //	pthread_mutex_t mutex;
 //} llist_t;
 
-void init_node(node_t *node, int val) {
+static int print_node(node_t *node);
+
+int init_node(node_t *node, int val) {
+	if (node == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
 	node->val = val;
 	node->callback_print = &print_node;
 	node->next = NULL;
+
+	return 0;
 }
 
-void print_node(node_t *node) {
-	printf("%3d;", node->val);
+static int print_node(node_t *node) {
+	if (node == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
+	int rc = printf("%3d;", node->val);
+	if (rc < 0) {
+		return LLIST_PRINTF_ERR;
+	}
+
+	return 0;
 }
 
-void init_list(llist_t *list) {
+int init_list(llist_t *list) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
 	list->start = NULL;
-	pthread_mutex_init(&list->mutex, NULL);
+	int rc = pthread_mutex_init(&list->mutex, NULL);
+	if (rc != 0) {
+		errno = rc;
+		return LLIST_PTHREAD_ERR;
+	}
+
+	return 0;
 }
 
-void destroy_list(llist_t *list) {
-	flush_list(list);
-	pthread_mutex_destroy(&list->mutex);
-}
+int destroy_list(llist_t *list) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
 
-void add_node(llist_t *list, int val) {
 	{
-		int err = pthread_mutex_lock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = flush_list(list);
+		if (rc != 0) {
+			return rc;
+		}
+	}
+	{
+		int rc = pthread_mutex_destroy(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
+		}
+	}
+	return 0;
+}
+
+int add_node(llist_t *list, int val) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
+	{
+		int rc = pthread_mutex_lock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
 
-	printf("adding node %d\n", val);
+	{
+		int rc = printf("adding node %d\n", val);
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
+		}
+	}
 	node_t **pcur = &list->start;
 	node_t *cur = list->start;
 	while (cur) {
 		if (cur->val == val) {
 			{
-				int err = pthread_mutex_unlock(&list->mutex);
-				if (err) {
-					handle_error_en(err);
+				int rc = pthread_mutex_unlock(&list->mutex);
+				if (rc != 0) {
+					errno = rc;
+					return LLIST_PTHREAD_ERR;
 				}
 			}
-			return;
+			return LLIST_DUP_VAL;
 		}
 		pcur = &cur->next;
 		cur = cur->next;
 	}
 	*pcur = (node_t*) malloc(sizeof(node_t));
-	init_node(*pcur, val);
-
 	{
-		int err = pthread_mutex_unlock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = init_node(*pcur, val);
+		if (rc != 0) {
+			return rc;
 		}
 	}
+
+	{
+		int rc = pthread_mutex_unlock(&list->mutex);
+		if (rc) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
+		}
+	}
+
+	return 0;
 }
 
-void delete_node(llist_t *list, int val) {
+int delete_node(llist_t *list, int val) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
 	{
-		int err = pthread_mutex_lock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_lock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
 
-	printf("deleting node %d\n", val);
+	{
+		int rc = printf("deleting node %d\n", val);
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
+		}
+	}
 	node_t **pcur = &list->start;
 	node_t *cur = list->start;
 	while (cur) {
@@ -85,60 +158,97 @@ void delete_node(llist_t *list, int val) {
 			*pcur = cur->next;
 			free(cur);
 			{
-				int err = pthread_mutex_unlock(&list->mutex);
-				if (err) {
-					handle_error_en(err);
+				int rc = pthread_mutex_unlock(&list->mutex);
+				if (rc != 0) {
+					errno = rc;
+					return LLIST_PTHREAD_ERR;
 				}
 			}
-			return;
+			return 0;
 		}
 		pcur = &cur->next;
 		cur = cur->next;
 	}
 
 	{
-		int err = pthread_mutex_unlock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_unlock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
+
+	return LLIST_NOT_FOUND;
 }
 
-void print_list(llist_t *list) {
+int print_list(llist_t *list) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
 	{
-		int err = pthread_mutex_lock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_lock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
 
-	printf("printing the list\n");
+	{
+		int rc = printf("printing the list\n");
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
+		}
+	}
 	node_t *cur = list->start;
 	while (cur) {
-		cur->callback_print(cur);
+		{
+			int rc = cur->callback_print(cur);
+			if (rc != 0) {
+				return rc;
+			}
+		}
 		cur = cur->next;
 	}
-	printf("\n");
-
 	{
-		int err = pthread_mutex_unlock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = printf("\n");
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
 		}
 	}
+
+	{
+		int rc = pthread_mutex_unlock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
+		}
+	}
+	return 0;
 }
 
-void sort_list(llist_t *list) {
+int sort_list(llist_t *list) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
+	}
+
 	{
-		int err = pthread_mutex_lock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_lock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
 
-	printf("sorting the list\n");
+	{
+		int rc = printf("sorting the list\n");
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
+		}
+	}
+
 	if (!list->start) {
-		return;
+		return 0;
 	}
 
 	node_t *cur1 = list->start;
@@ -168,22 +278,33 @@ void sort_list(llist_t *list) {
 	}
 
 	{
-		int err = pthread_mutex_unlock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_unlock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
+	return 0;
 }
 
-void flush_list(llist_t *list) {
-	{
-		int err = pthread_mutex_lock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
-		}
+int flush_list(llist_t *list) {
+	if (list == NULL) {
+		return LLIST_NULL_ARG;
 	}
 
-	printf("flushing the list\n");
+	{
+		int rc = pthread_mutex_lock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
+		}
+	}
+	{
+		int rc = printf("flushing the list\n");
+		if (rc < 0) {
+			return LLIST_PRINTF_ERR;
+		}
+	}
 	node_t *cur = list->start;
 	node_t *next;
 	while (cur) {
@@ -194,9 +315,11 @@ void flush_list(llist_t *list) {
 	list->start = NULL;
 
 	{
-		int err = pthread_mutex_unlock(&list->mutex);
-		if (err) {
-			handle_error_en(err);
+		int rc = pthread_mutex_unlock(&list->mutex);
+		if (rc != 0) {
+			errno = rc;
+			return LLIST_PTHREAD_ERR;
 		}
 	}
+	return 0;
 }
